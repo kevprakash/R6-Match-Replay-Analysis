@@ -1,6 +1,6 @@
 # R6-Match-Replay-Analysis
 
-A parsing/analysis tool for use with R6: Siege replay files.
+A parsing/analysis tool for use with Rainbow 6: Siege replay files.
 
 ## Note on the Replay Parser
 The majority of the ReplayParser module was not designed by me, but was translated from Go to Python by me. 
@@ -16,7 +16,7 @@ A few notable optimizations and bug fixes in this version:
 - Parse Replays (Refer to https://github.com/redraskal/r6-dissect for parsing features)
 - Record team per-round data
     - Match ID
-    - Round #
+    - Round Number
     - Map
     - Defense Site
     - If the team was attack of defense
@@ -27,7 +27,7 @@ A few notable optimizations and bug fixes in this version:
 - Record player per-round data
     - Player name
     - Match ID
-    - Round #
+    - Round Number
     - Operator
     - Spawn (**WIP**: Attacker spawns sometimes parsed incorrectly)
     - Kills
@@ -44,7 +44,7 @@ A few notable optimizations and bug fixes in this version:
     - Player name
     - Kills
     - Deaths
-    - Headshot Kill %
+    - Headshot Kill Percentage
     - Pivot Kills (An advanced metric)
     - Pivot Deaths (An advanced metric)
     - Opening Kills
@@ -74,7 +74,7 @@ Example of things that do not count as pivot kills/deaths:
 
 **Traded Kill/Death Ratio**: The number of traded kills/deaths divided by the total number of kills/deaths. A lower Traded Kill Ratio is good, a higher Traded Death Ratio is good.
 
-**KOST**: A metric that stands for Kill, Objective, Survived, Traded. Basically the ratio of rounds where a player did at least one of those things:
+**KOST**: A metric that stands for **K**ill, **O**bjective, **S**urvived, **T**raded. Basically the ratio of rounds where a player did at least one of those things:
 - They got a kill
 - They made an objective player (planted/disabled defuser)
 - The survived the round
