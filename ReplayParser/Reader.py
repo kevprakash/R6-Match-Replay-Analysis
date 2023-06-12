@@ -69,7 +69,6 @@ class Reader:
             if id == p.id:
                 return i
         return -1
-        # raise Exception("No player with ID: " + str(id))
 
     def playerIndexByUsername(self, username):
         for i in range(len(self.header.players)):
@@ -88,10 +87,6 @@ class Reader:
         self.rawStream = replayFile
         self.dStream = zstandard.ZstdDecompressor().stream_reader(replayFile,  read_size=1024 ** 3, read_across_frames=True)
 
-        # fileStream = io.open(filePath, 'rb')
-        # fileBuffer = io.BufferedReader(fileStream, buffer_size=1024 * 1024)
-        # self.dStream = zstandard.ZstdDecompressor().stream_reader(fileBuffer, read_size=1024*1024, read_across_frames=True)
-
     def readBytes(self, length):
         return self.dStream.read(length)
 
@@ -107,7 +102,6 @@ class Reader:
             # If you've reached the end of the readable part of the file,
             # cut the read size in half to make sure you don't miss anything
             except zstandard.ZstdError as e:
-                # print(self.rawStream.peek())         # Just for debugging
                 readSize = readSize // 2
                 # If the read size is 0, there's literally nothing left to read
                 if readSize == 0:
@@ -361,11 +355,9 @@ class Reader:
                 dataByte = self.readBytes(1)
             except Exception as e:
                 print(type(e).__name__)
-                # traceback.print_stack()
                 break
 
             if self.roundEnded or eof:
-                # remainingBytes = self.rawStream.peek()
                 break
 
             partialMatch = False
@@ -411,7 +403,7 @@ class Reader:
 
         self.playersRead += 1
 
-        self.readBytes(8) # Skip the next 8 bytes
+        self.readBytes(8)               # Skip the next 8 bytes
         swap = self.readBytes(1)
 
         if swap == b'\x9d':
@@ -539,7 +531,6 @@ class Reader:
 
     def readTime(self, verbose=True):
         time = self.readUint32()
-        # if self.time == 0 and time == 11:
         if self.time == 0:
             if (time == 11) or self.planted:
                 self.roundEnd(verbose=verbose)
@@ -608,7 +599,7 @@ class Reader:
         activity = [b'\x00', b'\x00', b'\x00', b'\x22', b'\xe3', b'\x09', b'\x00', b'\x79']
         killIndicator = b'\x22\xd9\x13\x3c\xba'
 
-        bombIndicator = self.readBytes(1)
+        bombIndicator = self.readBytes(1)                   # Not used but might be useful in the future
         self.seek(activity)
         size = self.readInt()
         if size == 0:
