@@ -11,6 +11,7 @@ A few notable optimizations and bug fixes in this version:
 - Instead of reading directly from a decompression stream, this version of the parser decompresses the entire .rec file into a temporary file that is then read through. Not sure of the impact this has on performance, but it helps with debugging and reverse-engineering.
 - Instead of scanning byte-by-byte, this version loads chunks of the decompressed file into a buffer then does a search for key byte sequences which it then directly jumps to. This makes the parser roughly 15x faster.
 - There seems to be a bug in the original where the site validation byte is sometimes not found. This is because the validation byte changes depending on whether the recording player is on the attacking or defending side. This has been fixed in this version.
+- Can find the recording player by using the profileID value (which works) instead of the ID value (which just doesn't work)
 
 ## Current Features
 - Parse Replays (Refer to https://github.com/redraskal/r6-dissect for parsing features)
