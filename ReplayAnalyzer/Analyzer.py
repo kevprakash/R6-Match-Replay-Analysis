@@ -4,7 +4,6 @@ from typing import List
 import ReplayParser.IDDecoding as Decode
 from ReplayParser.Reader import Reader
 from dataclasses import dataclass
-from pprint import pprint, pformat
 from copy import deepcopy
 import os
 import time
@@ -28,13 +27,13 @@ class PlayerRoundInfo:
     objective: bool = False
     traded: bool = False
     role: str = None
-    spawn: str = None           # This can be wrong for attacks if they change spawn (I think?)
+    spawn: str = None           # This can be wrong for attackers if they change spawn (I think?)
 
 
 @dataclass
 class TeamRoundInfo:
     role: str = None
-    score: int = -1                         # This is the score before the round starts
+    score: int = -1
     won: bool = False
     winCondition: str = None
     players: List[PlayerRoundInfo] = None
@@ -114,9 +113,6 @@ def getPlayer(header: RoundHeader, playerName: str):
     for p in header.allPlayers:
         if p.name == playerName:
             return p
-    # for p in header.allPlayers:
-    #     print(p.name)
-    # raise Exception("Player with name \"" + playerName + "\" not found")
     print("Player with name \"" + playerName + "\" not found")
     return None
 
@@ -126,7 +122,6 @@ def processEventFeed(eventFeed: List[MatchUpdate], header: RoundHeader):
     inPrep = True
     postPlant = False
     plantStartTime = -1.0
-    plantEndTime = -1.0
 
     # Process each event in order based on the event type
     for e in eventFeed:
@@ -156,6 +151,7 @@ def processEventFeed(eventFeed: List[MatchUpdate], header: RoundHeader):
             for pe in processedEvents:
                 pe.timeInSeconds = pe.timeInSeconds - plantEndTime + 45.0
 
+            # This isn't used but it might be useful with future updates, so I'm leaving it
             postPlant = True
             processedEvents.append(deepcopy(e))
 
@@ -281,17 +277,10 @@ def processMatch(folderPath, playersToCareAbout: List[str], parserVerbose=False)
                 print()
             else:
                 print("Round", roundParser.header.roundNumber, "did not end properly")
-                # for e in roundParser.matchFeedback:
-                #     print(e)
 
     roundTable, playerTable = matchDataToTable(roundInfos, playersToCareAbout)
     matchName = ntpath.basename(folderPath)
     save(roundTable, playerTable, matchName)
-
-    # print(roundTable.to_string())
-    # print()
-    # print(playerTable.to_string())
-    # print()
 
     endTime = time.time()
     timeStr = time.strftime('%H:%M:%S', time.gmtime(endTime - startTime))
@@ -400,10 +389,3 @@ def compileStats(fileName, perMatch=False):
     compiledStats.to_excel(writer, sheet_name="Overall", index=False)
 
     writer.close()
-
-
-if __name__ == "__main__":
-    players = ["Arcturus.-", "Mightster.-", "Derpydoge2023.-", "Asylum.--", "Chromeo.-"]
-    MatchName = "Match-2023-06-03_08-28-11-247"
-    processMatch("C:\\Users\\kevpr\\Desktop\\2023 Dallas LAN Replays\\" + MatchName, players, parserVerbose=False)
-    compileStats(MatchName)

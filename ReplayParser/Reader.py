@@ -1,10 +1,6 @@
-import fileinput
-
 import zstandard
-import traceback
 import ReplayParser.IDDecoding as IDDecoding
 from ReplayParser.DataClasses import *
-import struct
 import io
 import time
 from pathlib import Path
@@ -32,8 +28,6 @@ class Reader:
         self.disableStartTimer = -1
         self.planted = False
         self.numBytesRead = 0
-        self.milestoneFreq = 1000000
-        self.nextMilestone = 0
         self.matchFeedback = []
         self.roundEnded = False
 
@@ -133,16 +127,6 @@ class Reader:
         if verbose:
             print(b, "->", i)
         return i
-
-    def byteToFloat(self, b, hex=False, verbose=False):
-        if hex:
-            [f] = struct.unpack('f', b)
-        else:
-            f = float(b.decode)
-
-        if verbose:
-            print(b, "->", f)
-        return f
 
     def readInt(self):
         b = self.readBytes(1)
@@ -302,8 +286,6 @@ class Reader:
         if verbose:
             print("Finished reading Header")
         return h
-
-
 
     # For use while parsing the header
     def readHeaderString(self):
