@@ -1,6 +1,6 @@
 # R6-Match-Replay-Analysis
 
-A parsing/analysis tool for use with Rainbow 6: Siege replay files.
+A parsing/analysis tool for use with Rainbow 6: Siege replay (.rec) files.
 
 ## Note on the Replay Parser
 The majority of the ReplayParser module was not designed by me, but was translated from Go to Python by me. 
