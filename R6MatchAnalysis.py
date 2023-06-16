@@ -29,5 +29,5 @@ Analyzer.compileStats(MatchName)
 
 # Replace this with whatever you want to call the save file
 saveName = "DALLAS_LAN"
-Analyzer.processMultipleMatches(MatchDirectory, "Dallas_LAN", players, parserVerbose=False)
+Analyzer.processMultipleMatches(MatchDirectory, saveName, players, parserVerbose=False)
 Analyzer.compileStats(saveName)

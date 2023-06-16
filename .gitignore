@@ -3,3 +3,4 @@
 !Output/Example.xlsx
 **/__pycache__
 Personal.py
+*.decompressed
