@@ -50,8 +50,20 @@ class RoundHeader:
     allPlayers: List[PlayerRoundInfo] = None
 
 
+def convertPlayerNameToAlias(name, aliasDict):
+    if aliasDict is None:
+        return name
+
+    aliasDict = convertPlayerDict(aliasDict)
+
+    try:
+        return aliasDict[name]
+    except KeyError:
+        return name
+
+
 # Takes in header and event info from the Reader
-def processRound(roundHeader: Header, events: List[MatchUpdate]):
+def processRound(roundHeader: Header, events: List[MatchUpdate], aliasDict=None):
 
     newHeader = RoundHeader()                   # Naming is a bit confusing, might make differences clear later
     newHeader.matchID = roundHeader.matchID
@@ -80,7 +92,7 @@ def processRound(roundHeader: Header, events: List[MatchUpdate]):
     players = []
     for p in roundHeader.players:
         newPlayer = PlayerRoundInfo()
-        newPlayer.name = p.username
+        newPlayer.name = convertPlayerNameToAlias(p.username, aliasDict)
         newPlayer.operator = Decode.getOpName(p.operator)
         newPlayer.role = ("Attack" if p.teamIndex == attackIndex else "Defense")
         newPlayer.spawn = p.spawn
@@ -93,8 +105,8 @@ def processRound(roundHeader: Header, events: List[MatchUpdate]):
 
     newHeader.allPlayers = players
 
-    processedEvents = processEventFeed(events, newHeader)
-    calculatePlayerRoundStats(processedEvents, newHeader)
+    processedEvents = processEventFeed(events, newHeader, aliasDict=aliasDict)
+    calculatePlayerRoundStats(processedEvents, newHeader, aliasDict=aliasDict)
 
     return newHeader
 
@@ -109,15 +121,16 @@ def getTeamByRole(roundHeader: Header, isAttack):
     return None
 
 
-def getPlayer(header: RoundHeader, playerName: str):
+def getPlayer(header: RoundHeader, playerName: str, aliasDict=None):
+    alias = convertPlayerNameToAlias(playerName, aliasDict)
     for p in header.allPlayers:
-        if p.name == playerName:
+        if p.name == alias:
             return p
     print("Player with name \"" + playerName + "\" not found")
     return None
 
 
-def processEventFeed(eventFeed: List[MatchUpdate], header: RoundHeader):
+def processEventFeed(eventFeed: List[MatchUpdate], header: RoundHeader, aliasDict=None):
     processedEvents = []
     inPrep = True
     postPlant = False
@@ -126,7 +139,7 @@ def processEventFeed(eventFeed: List[MatchUpdate], header: RoundHeader):
     # Process each event in order based on the event type
     for e in eventFeed:
         if e.type == MUT.OperatorSwap:
-            p = getPlayer(header, e.username)
+            p = getPlayer(header, e.username, aliasDict)
             p.operator = Decode.getOpName(e.operator)
 
         # This marks the start of the action phase
@@ -163,12 +176,12 @@ def processEventFeed(eventFeed: List[MatchUpdate], header: RoundHeader):
     return processedEvents
 
 
-def getPlayerTeam(header: RoundHeader, playerName: str):
-    p = getPlayer(header, playerName)
+def getPlayerTeam(header: RoundHeader, playerName: str, aliasDict=None):
+    p = getPlayer(header, playerName, aliasDict)
     return p.role
 
 
-def calculatePlayerRoundStats(processedEvents: List[MatchUpdate], header: RoundHeader, tradeWindow=8.0):
+def calculatePlayerRoundStats(processedEvents: List[MatchUpdate], header: RoundHeader, tradeWindow=8.0, aliasDict=None):
     openerTime = -1.0
     killsToBeTraded = []
     potentialPivotKills = []
@@ -176,11 +189,11 @@ def calculatePlayerRoundStats(processedEvents: List[MatchUpdate], header: RoundH
 
     for e in processedEvents:
         if e.type in [MUT.DefuserPlantComplete, MUT.DefuserDisableComplete]:
-            p = getPlayer(header, e.username)
+            p = getPlayer(header, e.username, aliasDict)
             p.objective = True
 
         if e.type == MUT.Death:
-            p = getPlayer(header, e.username)
+            p = getPlayer(header, e.username, aliasDict)
             p.died = True
             if e.timeInSeconds >= openerTime:
                 openerTime = e.timeInSeconds
@@ -191,15 +204,15 @@ def calculatePlayerRoundStats(processedEvents: List[MatchUpdate], header: RoundH
 
             if (playerDelta == 0) or (playerDelta == deltaDir):
                 p.pivotDeath = True
-                processPivots(potentialPivotKills, header)
+                processPivots(potentialPivotKills, header, aliasDict)
                 potentialPivotKills = []
 
             if ((p.role == "Attack") and (playerDelta < -1)) or ((p.role == "Defense") and (playerDelta > 1)):
                 potentialPivotKills.append(e)
 
         if e.type == MUT.Kill:
-            p = getPlayer(header, e.username)
-            p2 = getPlayer(header, e.target)
+            p = getPlayer(header, e.username, aliasDict)
+            p2 = getPlayer(header, e.target, aliasDict)
 
             if p.role != p2.role:
                 p.kills += 1
@@ -220,7 +233,7 @@ def calculatePlayerRoundStats(processedEvents: List[MatchUpdate], header: RoundH
 
             if (playerDelta == 0) or (playerDelta == deltaDir):
                 potentialPivotKills.append(e)
-                processPivots(potentialPivotKills, header)
+                processPivots(potentialPivotKills, header, aliasDict)
                 potentialPivotKills = []
 
             if ((p2.role == "Defense") and (playerDelta > 1)) or ((p2.role == "Attack") and (playerDelta < -1)):
@@ -230,10 +243,10 @@ def calculatePlayerRoundStats(processedEvents: List[MatchUpdate], header: RoundH
                 k = killsToBeTraded[i]
                 if k.timeInSeconds - e.timeInSeconds <= tradeWindow:
                     if k.username == e.target:
-                        p3 = getPlayer(header, k.target)
+                        p3 = getPlayer(header, k.target, aliasDict)
                         p3.traded = True
 
-                        p4 = getPlayer(header, k.username)
+                        p4 = getPlayer(header, k.username, aliasDict)
                         p4.untradedKills -= 1
                 else:
                     # Out of trade window, don't need to process it anymore
@@ -243,14 +256,14 @@ def calculatePlayerRoundStats(processedEvents: List[MatchUpdate], header: RoundH
         p.untradedKills += p.kills
 
 
-def processPivots(pivots: List[MatchUpdate], header: RoundHeader):
+def processPivots(pivots: List[MatchUpdate], header: RoundHeader, aliasDict=None):
     for e in pivots:
         if e.type == MUT.Death:
-            p = getPlayer(header, e.username)
+            p = getPlayer(header, e.username, aliasDict)
             p.pivotDeath = True
         if e.type == MUT.Kill:
-            p = getPlayer(header, e.username)
-            p2 = getPlayer(header, e.target)
+            p = getPlayer(header, e.username, aliasDict)
+            p2 = getPlayer(header, e.target, aliasDict)
 
             if p.role != p2.role:
                 p.pivotKills += 1
@@ -258,12 +271,24 @@ def processPivots(pivots: List[MatchUpdate], header: RoundHeader):
             p2.pivotDeath = True
 
 
+def convertPlayerDict(playerDict):
+    reverseDict = {}
+    for playerName in playerDict.keys():
+        aliases = playerDict[playerName]
+        for alias in aliases:
+            reverseDict[alias] = playerName
+
+    return reverseDict
+
+
 # This function expects all the files in the given folder to be .rec files
 # Basically just patch a match folder in and it should work
-def processMatch(folderPath, playersToCareAbout: List[str], parserVerbose=False):
+def processMatch(folderPath, playersToCareAbout: dict, parserVerbose=False):
 
     startTime = time.time()
     roundInfos: List[RoundHeader] = []
+
+    aliasList = list(playersToCareAbout.keys())
 
     for file in os.listdir(folderPath):
         if file.endswith(".rec"):
@@ -271,25 +296,63 @@ def processMatch(folderPath, playersToCareAbout: List[str], parserVerbose=False)
             roundParser = Reader(roundFilePath)
             roundParser.read(verbose=parserVerbose)
             if roundParser.roundEnded:
-                roundData = processRound(roundParser.header, roundParser.matchFeedback)
+                roundData = processRound(roundParser.header, roundParser.matchFeedback, aliasDict=playersToCareAbout)
                 roundInfos.append(roundData)
                 print("Processed Round", roundInfos[-1].roundNum)
                 print()
             else:
                 print("Round", roundParser.header.roundNumber, "did not end properly")
 
-    roundTable, playerTable = matchDataToTable(roundInfos, playersToCareAbout)
+    roundTable, playerTable = matchDataToTable(roundInfos, aliasList)
     matchName = ntpath.basename(folderPath)
     save(roundTable, playerTable, matchName)
 
     endTime = time.time()
     timeStr = time.strftime('%H:%M:%S', time.gmtime(endTime - startTime))
-    print("Total time to process match:", timeStr, "seconds")
+    print("Total time to process match:", timeStr)
+
+
+# This function expects the input to be a folder of matches (which themselves should be a folder of .rec files)
+def processMultipleMatches(folderPath, saveName, playersToCareAbout: dict, parserVerbose=False):
+    startTime = time.time()
+    roundInfos: List[RoundHeader] = []
+    numMatches = 0
+
+    aliasList = list(playersToCareAbout.keys())
+
+    for matchName in os.listdir(folderPath):
+        matchPath = folderPath + "\\" + matchName
+        print("Processing Match", matchName)
+        containsReplay = False
+        for file in os.listdir(matchPath):
+            if file.endswith(".rec"):
+                containsReplay = True
+                roundFilePath = matchPath + "\\" + file
+                roundParser = Reader(roundFilePath)
+                roundParser.read(verbose=parserVerbose)
+                if roundParser.roundEnded:
+                    roundData = processRound(roundParser.header, roundParser.matchFeedback, aliasDict=playersToCareAbout)
+                    roundInfos.append(roundData)
+                    print("\tRound", roundInfos[-1].roundNum)
+                    print()
+                else:
+                    print("\tRound", roundParser.header.roundNumber, "did not end properly")
+        if containsReplay:
+            numMatches += 1
+        print("Finished processing Match", matchName)
+
+    roundTable, playerTable = matchDataToTable(roundInfos, aliasList)
+    save(roundTable, playerTable, saveName)
+
+    endTime = time.time()
+    timeStr = time.strftime('%H:%M:%S', time.gmtime(endTime - startTime))
+    print("Total time to process all", numMatches, "matches:", timeStr)
 
 
 # Note: ALL players must be on the same team
 # I will cry otherwise
 # If you want to record data for players on both teams, call this twice
+# Note: You can call this on multiple matches, it doesn't really matter since the match info is stored in the round header
 def matchDataToTable(matchData: List[RoundHeader], playerNames: List[str]):
 
     roundTable = pd.DataFrame(columns=["Match ID", "Round", "Map", "Site", "Attack/Defense", "Planted", "Disabled", "Win/Loss", "Win Condition"])

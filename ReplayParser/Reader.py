@@ -514,6 +514,8 @@ class Reader:
         recordingSide = self.getRecordingPlayerSide()
         pass
 
+        siteFlag = None
+
         if recordingSide == "Attack":
             siteFlag = b'\x02'
         elif recordingSide == "Defense":
