@@ -2,3 +2,4 @@
 *.xlsx
 !Output/Example.xlsx
 **/__pycache__
+Personal.py
