@@ -19,7 +19,7 @@ OperatorIDNamePairs = [
     ("Warden", 104189662920), ("Mira", 92270644319), ("Sledge", 92270642344), ("Melusi", 104189664273), 
     ("Bandit", 92270642526), ("Valkyrie", 92270642188), ("Rook", 92270644059), ("Kapkan", 92270641980), 
     ("Zero", 291191151607), ("Iana", 104189664038), ("Ash", 92270642656), ("Blackbeard", 92270642136), 
-    ("Osa", 288200867444), ("Thorn", 373711624351), ("Jager", 92270642604), ("Kali", 104189663920), 
+    ("Osa", 288200867444), ("Thorn", 373711624351), ("Jäger", 92270642604), ("Kali", 104189663920),
     ("Thermite", 92270642760), ("Brava", 288200866821), ("Amaru", 104189663607), ("Ying", 92270642292), 
     ("Lesion", 92270642266), ("Doc", 92270644007), ("Lion", 104189661861), ("Fuze", 92270642032), 
     ("Smoke", 92270642396), ("Vigil", 92270644293), ("Mute", 92270642318), ("Goyo", 104189663698), 
@@ -32,8 +32,8 @@ OperatorIDNamePairs = [
     ("Frost", 92270642500), ("Maestro", 104189662175), ("Clash", 104189662280), ("Fenrir", 288200867339),
 ]
 
-OperatorIDDecoder = {x[1]: x[0] for x in OperatorIDNamePairs}
-OperatorNameEncoder = {x[0]: x[1] for x in OperatorIDNamePairs}
+OperatorIDDecoder = {x[1]: x[0].lower() for x in OperatorIDNamePairs}
+OperatorNameEncoder = {x[0].lower(): x[1] for x in OperatorIDNamePairs}
 
 OperatorRoles = [
     ("Castle", "Defense"), ("Aruni", "Defense"), ("Kaid", "Defense"), ("Mozzie", "Defense"),
@@ -42,7 +42,7 @@ OperatorRoles = [
     ("Warden", "Defense"), ("Mira", "Defense"), ("Sledge", "Attack"), ("Melusi", "Defense"),
     ("Bandit", "Defense"), ("Valkyrie", "Defense"), ("Rook", "Defense"), ("Kapkan", "Defense"),
     ("Zero", "Attack"), ("Iana", "Attack"), ("Ash", "Attack"), ("Blackbeard", "Attack"),
-    ("Osa", "Attack"), ("Thorn", "Defense"), ("Jager", "Defense"), ("Kali", "Attack"),
+    ("Osa", "Attack"), ("Thorn", "Defense"), ("Jäger", "Defense"), ("Kali", "Attack"),
     ("Thermite", "Attack"), ("Brava", "Attack"), ("Amaru", "Attack"), ("Ying", "Attack"),
     ("Lesion", "Defense"), ("Doc", "Defense"), ("Lion", "Attack"), ("Fuze", "Attack"),
     ("Smoke", "Defense"), ("Vigil", "Defense"), ("Mute", "Defense"), ("Goyo", "Defense"),
@@ -55,7 +55,7 @@ OperatorRoles = [
     ("Frost", "Defense"), ("Maestro", "Defense"), ("Clash", "Defense"), ("Fenrir", "Defense"),
 ]
 
-OperatorRolesDict = {x[0]:x[1] for x in OperatorRoles}
+OperatorRolesDict = {x[0].lower():x[1] for x in OperatorRoles}
 
 
 def getMapName(mapID):

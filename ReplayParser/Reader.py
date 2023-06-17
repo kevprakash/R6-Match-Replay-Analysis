@@ -153,8 +153,9 @@ class Reader:
         self.queries.append(b)
         self.listeners.append(listener)
 
-    def getRecordingPlayerSide(self):
-        pass
+    def getRecordingPlayerSide(self, verbose=False):
+        # This derives the team roles in case all 10 players aren't processed yet
+        self.deriveTeamRoles(verbose=verbose)
         for p in self.header.players:
             if p.profileID == self.header.recordingProfileID:
                 return self.header.teams[p.teamIndex].role
@@ -485,11 +486,16 @@ class Reader:
                     print("Could not find operator with ID:", p.operator)
                     if p.roleName is not None:
                         print("Could possibly be:", p.roleName)
-                continue
+
+                if p.roleName is not None:
+                    role = IDDecoding.getOpRoleByName(p.roleName.lower())
+                else:
+                    continue
             teamIndex = p.teamIndex
             oppTeamIndex = teamIndex ^ 1
-            self.header.teams[teamIndex].role = "Attack" if role else "Defense"
-            self.header.teams[oppTeamIndex].role = "Defense" if role else "Attack"
+            pass
+            self.header.teams[teamIndex].role = role
+            self.header.teams[oppTeamIndex].role = "Defense" if (role == "Attack") else "Attack"
 
     def readAtkOpSwap(self, verbose=True):
         op = self.readUint64()
@@ -511,7 +517,7 @@ class Reader:
         self.readBytes(6)               # Skip the next 6 bytes
         site = self.readBytes(1)
 
-        recordingSide = self.getRecordingPlayerSide()
+        recordingSide = self.getRecordingPlayerSide(verbose)
         pass
 
         siteFlag = None
