@@ -83,9 +83,9 @@ Example of things that do not count as pivot kills/deaths:
 
 ## Usage
 The simplest way to use this code for yourself is to edit R6MatchAnalysis.py as the comments on it suggest, then run it. It will output a .xlsx file to the Output folder.
-You can use this as your stats reference for the match. 
+You can use this as your stats reference for the match. You can also pass a folder of match replays (as the comments will guide you on) to process multiple matches. A (competitive) match takes roughly 2 minutes to process.
 
-If you want to log multiple matches, I suggest creating a different spreadsheet with the same columns as the Rounds and Players sheets,
+If you want to log multiple matches over a stretch of time, I suggest creating a different spreadsheet with the same columns as the Rounds and Players sheets,
 then appending the rows from the output spreadsheet's respective sheets to that spreadsheet. You can then treat them like relational database tables 
 (with the primary key of Rounds being Match ID, Round; and the primary key of Players being Name, Match ID, Round) and query them for any analytics you wish to do on your own.
 If you wish to get the same compiled stats table that the Overall sheet provides, you can call compileStats() from Analyzer.py on your spreadsheet, which will add a sheet for Overall stats.
