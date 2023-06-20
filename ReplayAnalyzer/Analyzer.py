@@ -419,26 +419,29 @@ def compileStats(fileName, perMatch=False):
 
     keyStr = "Name"
     if perMatch:
-        keyStr = keyStr + ", \"Match ID\""
+        keyStr = "\"Match ID\", Name"
 
     aggregated = ps.sqldf(
             "select " +
             keyStr +
-            ", sum(Kills) as Kills, sum(Died) as Deaths, sum(Headshots) * 100.0 /sum(Kills) as \"Headshot %\", " +
+            ", count(*) as Rounds, sum(Kills) as Kills, sum(Died) as Deaths, sum(Headshots) * 100.0 /sum(Kills) as \"Headshot %\", " +
             "sum(\"Pivot Kills\") as \"Pivot Kills\", sum(\"Pivot Death\") as \"Pivot Deaths\", " +
             "sum(\"Opening Kill\") as \"Opening Kills\", sum(\"Opening Death\") as \"Opening Deaths\", " +
             "sum(\"Untraded Kills\") as \"Untraded Kills\", sum(Died) - sum(Traded) as \"Untraded Deaths\", " +
-            "sum(case when Kills > 0 or \"Objective Play\" or not Died or Traded then 1 else 0 end) * 1.0 / count(*) as KOST " +
+            "sum(case when Kills > 0 or \"Objective Play\" or not Died or Traded then 1 else 0 end) * 1.0 / count(*) as KOST, " +
+            "(count(*) - sum(Died))/count(*) as Survival"
             "from playerTable group by " +
             keyStr
     )
 
     combinedStats = ps.sqldf(
-        "select (case when Deaths=0 then Kills else Kills* 1.0 /Deaths end) as KD, " +
+        "select " +
+        "(case when Deaths=0 then Kills else Kills* 1.0 /Deaths end) as KD, " +
         "(case when \"Pivot Deaths\"=0 then \"Pivot Kills\" else \"Pivot Kills\" * 1.0 /\"Pivot Deaths\" end) as \"Pivot KD\", " +
         "(case when \"Untraded Deaths\"=0 then \"Untraded Kills\" else \"Untraded Kills\" * 1.0 /\"Untraded Deaths\" end) as \"Untraded KD\", " +
         "(case when Kills = 0 then 0 else (Kills - \"Untraded Kills\") * 1.0 /Kills end) as \"Traded Kill Ratio\", " +
         "(case when Deaths = 0 then 0 else (Deaths - \"Untraded Deaths\") * 1.0 /Deaths end) as \"Traded Death Ratio\" " +
+        ""
         "from aggregated"
     )
 

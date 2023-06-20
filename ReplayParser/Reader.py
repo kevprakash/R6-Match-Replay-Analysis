@@ -46,18 +46,19 @@ class Reader:
 
     def decompressFile(self, fileName, verbose=False):
         outputPath = str(Path(__file__).parent.parent) + "\\temp\\" + fileName + ".decompressed"
-        if verbose:
-            print("Decompressing", self.filePath, "to", outputPath)
-        writeStream = open(outputPath, 'wb+')
-        chunkSize = 8192
-        while True:
-            try:
-                chunk = self.readWrapper(chunkSize, readSize=chunkSize, verbose=False)
-                writeStream.write(chunk)
-            except zstandard.ZstdError:
-                writeStream.close()
-                self.dStream.close()
-                break
+        if not os.path.isfile(outputPath):
+            if verbose:
+                print("Decompressing", self.filePath, "to", outputPath)
+            writeStream = open(outputPath, 'wb+')
+            chunkSize = 8192
+            while True:
+                try:
+                    chunk = self.readWrapper(chunkSize, readSize=chunkSize, verbose=False)
+                    writeStream.write(chunk)
+                except zstandard.ZstdError:
+                    writeStream.close()
+                    self.dStream.close()
+                    break
 
         self.rawStream = io.open(outputPath, 'rb')
         self.dStream = io.BufferedReader(self.rawStream, buffer_size=1024 ** 3)
@@ -328,7 +329,7 @@ class Reader:
             self.numBytesRead += nearestIndex
             return True, False
 
-    def read(self, verbose=True):
+    def read(self, verbose=True, deleteDecompressed=True):
         startTime = time.time()
 
         self.decompressFile(self.fileName, verbose=verbose)
@@ -388,7 +389,8 @@ class Reader:
 
         self.dStream.close()
         self.rawStream.close()
-        os.remove(self.decompressFilePath)
+        if deleteDecompressed:
+            os.remove(self.decompressFilePath)
 
         endTime = time.time()
         if verbose:
