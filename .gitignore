@@ -1,6 +1,8 @@
 .idea/
 *.xlsx
+*.csv
 !Output/Example.xlsx
 **/__pycache__
 Personal.py
+ScoreCalculator.py
 *.decompressed

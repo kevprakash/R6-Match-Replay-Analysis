@@ -283,7 +283,7 @@ def convertPlayerDict(playerDict):
 
 # This function expects all the files in the given folder to be .rec files
 # Basically just patch a match folder in and it should work
-def processMatch(folderPath, playersToCareAbout: dict, parserVerbose=False):
+def processMatch(folderPath, playersToCareAbout: dict, parserVerbose=False, enemy=False, bothTeams=False):
 
     startTime = time.time()
     roundInfos: List[RoundHeader] = []
@@ -303,7 +303,7 @@ def processMatch(folderPath, playersToCareAbout: dict, parserVerbose=False):
             else:
                 print("Round", roundParser.header.roundNumber, "did not end properly")
 
-    roundTable, playerTable = matchDataToTable(roundInfos, aliasList)
+    roundTable, playerTable = matchDataToTable(roundInfos, aliasList, enemy=enemy, bothTeams=bothTeams)
     matchName = ntpath.basename(folderPath)
     save(roundTable, playerTable, matchName)
 
@@ -313,7 +313,7 @@ def processMatch(folderPath, playersToCareAbout: dict, parserVerbose=False):
 
 
 # This function expects the input to be a folder of matches (which themselves should be a folder of .rec files)
-def processMultipleMatches(folderPath, saveName, playersToCareAbout: dict, parserVerbose=False):
+def processMultipleMatches(folderPath, saveName, playersToCareAbout: dict, parserVerbose=False, enemy=False, bothTeams=False):
     startTime = time.time()
     roundInfos: List[RoundHeader] = []
     numMatches = 0
@@ -333,15 +333,16 @@ def processMultipleMatches(folderPath, saveName, playersToCareAbout: dict, parse
                 if roundParser.roundEnded:
                     roundData = processRound(roundParser.header, roundParser.matchFeedback, aliasDict=playersToCareAbout)
                     roundInfos.append(roundData)
-                    print("\tRound", roundInfos[-1].roundNum)
-                    print()
+                    print("\tRound", roundInfos[-1].roundNum + 1)
+                    if parserVerbose:
+                        print()
                 else:
                     print("\tRound", roundParser.header.roundNumber, "did not end properly")
         if containsReplay:
             numMatches += 1
         print("Finished processing Match", matchName)
 
-    roundTable, playerTable = matchDataToTable(roundInfos, aliasList)
+    roundTable, playerTable = matchDataToTable(roundInfos, aliasList, enemy=enemy, bothTeams=bothTeams)
     save(roundTable, playerTable, saveName)
 
     endTime = time.time()
@@ -351,9 +352,11 @@ def processMultipleMatches(folderPath, saveName, playersToCareAbout: dict, parse
 
 # Note: ALL players must be on the same team
 # I will cry otherwise
-# If you want to record data for players on both teams, call this twice
+# Enemy is a flag to calculate everything from the opponents PoV
+# If you want to record data for players on both teams, set bothTeams to True (this calculates stats for all players)
+# Setting bothTeams still requires you to specify one or more players, because it uses those players' team for round info
 # Note: You can call this on multiple matches, it doesn't really matter since the match info is stored in the round header
-def matchDataToTable(matchData: List[RoundHeader], playerNames: List[str]):
+def matchDataToTable(matchData: List[RoundHeader], playerNames: List[str], enemy=False, bothTeams=False):
 
     roundTable = pd.DataFrame(columns=["Match ID", "Round", "Map", "Site", "Attack/Defense", "Planted", "Disabled", "Win/Loss", "Win Condition"])
     playerTable = pd.DataFrame(columns=["Name", "Match ID", "Round", "Operator", "Spawn", "Kills", "Headshots", "Pivot Kills", "Untraded Kills", "Died", "Pivot Death", "Opening Kill", "Opening Death", "Objective Play", "Traded"])
@@ -362,11 +365,29 @@ def matchDataToTable(matchData: List[RoundHeader], playerNames: List[str]):
         matchID = roundData.matchID
         roundNum = roundData.attackers.score + roundData.defenders.score
 
-        playersToCareAbout = [getPlayer(roundData, pName) for pName in playerNames]
+        if not enemy:
+            playersToCareAbout = [getPlayer(roundData, pName) for pName in playerNames]
+        else:
+            playersToCareAbout = []
+            for p in roundData.allPlayers:
+                if p.name not in playerNames:
+                    playersToCareAbout.append(p)
+
         playersToCareAbout = [p for p in playersToCareAbout if p is not None]
         playerTeams = [p.role for p in playersToCareAbout]
         if not (playerTeams.count(playerTeams[0]) == len(playerTeams)):
-            raise Exception("All players to be analyzed must be on the same team")
+            if not enemy:
+                raise Exception("All players to be analyzed must be on the same team")
+            else:
+                namedPlayers = [getPlayer(roundData, pName) for pName in playerNames]
+                namedPlayersTeams = [p.role for p in namedPlayers]
+                if not (namedPlayersTeams.count(namedPlayersTeams[0]) == len(namedPlayersTeams)):
+                    raise Exception("All players to be analyzed must be on the same team")
+                temp = []
+                for p in playersToCareAbout:
+                    if p.role != namedPlayersTeams[0]:
+                        temp.append(p)
+                playersToCareAbout = temp
 
         teamToCareAbout = playerTeams[0]
 
@@ -379,6 +400,9 @@ def matchDataToTable(matchData: List[RoundHeader], playerNames: List[str]):
         if roundData.defenders.winCondition is not None:
             winLoss = "Win" if teamToCareAbout == "Defense" else "Loss"
             winCondition = roundData.defenders.winCondition
+
+        if bothTeams:
+            playersToCareAbout = roundData.allPlayers
 
         planted = False
         disabled = False
@@ -424,12 +448,14 @@ def compileStats(fileName, perMatch=False):
     aggregated = ps.sqldf(
             "select " +
             keyStr +
-            ", count(*) as Rounds, sum(Kills) as Kills, sum(Died) as Deaths, sum(Headshots) * 100.0 /sum(Kills) as \"Headshot %\", " +
+            ", count(*) as Rounds, sum(Kills) as Kills, sum(Died) as Deaths, " +
+            "(case when sum(Kills) = 0 then 0 else sum(Headshots) * 100.0 /sum(Kills) end) as \"Headshot %\", " +
             "sum(\"Pivot Kills\") as \"Pivot Kills\", sum(\"Pivot Death\") as \"Pivot Deaths\", " +
             "sum(\"Opening Kill\") as \"Opening Kills\", sum(\"Opening Death\") as \"Opening Deaths\", " +
             "sum(\"Untraded Kills\") as \"Untraded Kills\", sum(Died) - sum(Traded) as \"Untraded Deaths\", " +
+            "sum(\"Objective Play\") * 1.0 / count(*) as \"Objective Rate\", " +
             "sum(case when Kills > 0 or \"Objective Play\" or not Died or Traded then 1 else 0 end) * 1.0 / count(*) as KOST, " +
-            "(count(*) - sum(Died))/count(*) as Survival"
+            "(count(*) - sum(Died)) * 1.0/count(*) as Survival "
             "from playerTable group by " +
             keyStr
     )
@@ -441,13 +467,37 @@ def compileStats(fileName, perMatch=False):
         "(case when \"Untraded Deaths\"=0 then \"Untraded Kills\" else \"Untraded Kills\" * 1.0 /\"Untraded Deaths\" end) as \"Untraded KD\", " +
         "(case when Kills = 0 then 0 else (Kills - \"Untraded Kills\") * 1.0 /Kills end) as \"Traded Kill Ratio\", " +
         "(case when Deaths = 0 then 0 else (Deaths - \"Untraded Deaths\") * 1.0 /Deaths end) as \"Traded Death Ratio\" " +
-        ""
         "from aggregated"
     )
 
-    compiledStats = pd.concat([aggregated, combinedStats], axis=1)
+    # Used to calculate the player score
+    scoreStats = ps.sqldf(
+        "select " +
+        "Kills / Rounds as KPR, \"Pivot Kills\" / Rounds as PKPR, \"Untraded Kills\" / Rounds as UTKPR, Survival as SVR, " +
+        "\"Pivot Deaths\" / Rounds as PDPR, \"Untraded Deaths\" / Rounds as UTDPR, \"Objective Rate\" as OBJ, KOST, " +
+        "\"Traded Kill Ratio\" as TKR, \"Traded Death Ratio\" as TDR " +
+        "from aggregated"
+    )
 
-    outputPath = str(Path(__file__).parent.parent) + "\\Output\\" + fileName + "_Stats.xlsx"
+    # This score stat has a mean of 1 and a variance of 1 (based on sampled data, coefficients may change with more data)
+    # It roughly indicates how well a player did (this is NOT the same as SiegeGG's rating system)
+    scores = ps.sqldf(
+        "select (0.7705 * KPR + 0.8783 * PKPR + 0.8117 * UTKPR + 0.8965 * SVR - 1.122 * PDPR - 1.1885 * UTDPR + " +
+        "0.9913 * OBJ + 0.7895 * KOST - 1.0606 * TKR + 0.9421 * TDR - 1) / (2.1624) + 1 as \"Player Rating\" " +
+        "from scoreStats"
+    )
+
+    compiledStats = pd.concat([aggregated, combinedStats, scores], axis=1)
+
+    # Move score to the 2nd or 3rd index
+    colNames = compiledStats.columns.tolist()
+    if perMatch:
+        colNames = colNames[:2] + colNames[-1:] + colNames[2:-1]
+    else:
+        colNames = colNames[:1] + colNames[-1:] + colNames[1:-1]
+    compiledStats = compiledStats[colNames]
+
+    outputPath = str(Path(__file__).parent.parent) + "\\Output\\" + fileName + ("_MATCH_" if perMatch else "") + "_Stats.xlsx"
     writer = pd.ExcelWriter(outputPath)
 
     roundTable.to_excel(writer, sheet_name="Rounds", index=False)
