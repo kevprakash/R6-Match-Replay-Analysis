@@ -43,6 +43,7 @@ A few notable optimizations and bug fixes in this version:
     - If the player's death was traded (An advanced metric)
 - Compile player stats for the whole match (or multiple matches)
     - Player name
+    - Rating (An advanced metric)
     - Kills
     - Deaths
     - Headshot Kill Percentage
@@ -53,6 +54,7 @@ A few notable optimizations and bug fixes in this version:
     - Untraded Kills (An advanced metric)
     - Untraded Deaths (An advanced metric)
     - KOST (An advanced metric)
+    - Survival Rate
     - KD
     - Pivot KD (An advanced metric)
     - Untraded KD (An advanced metric)
@@ -80,6 +82,13 @@ Example of things that do not count as pivot kills/deaths:
 - They made an objective player (planted/disabled defuser)
 - The survived the round
 - Their death was traded
+
+**Rating**: A summary score for a player to see how well they did at a glance. This is **NOT** the same as SiegeGG's rating (which can be [manually estimated](https://www.youtube.com/watch?v=faoQZK2875Q) from the existing stats. The score takes into account a few key stats and was calibrated (via gradient descent) to have a mean of 1 and variance of 1. This calibration was done on a sample of matches from a single collegiate LAN tournament (82 rounds played total). This formula may be tweaked in the future to be more insightful and/or fit a larger dataset.
+
+$Rating = $
+$(0.7705 * KillsPerRound + 0.8783 * PivotKillsPerRound + 0.8117 * UntradedKillsPerRound + 0.8965 * SurvivalRate $
+$- 1.122 * PivotDeathsPerRound - 1.1885 * UntradedDeathsPerRound + 0.9913 * ObjectiveRate + 0.7895 * KOST $
+$- 1.0606 * TradedKillRatio + 0.9421 * TradedDeathRatio - 1) / (2.1624) + 1$
 
 ## Usage
 The simplest way to use this code for yourself is to edit R6MatchAnalysis.py as the comments on it suggest, then run it. It will output a .xlsx file to the Output folder.
