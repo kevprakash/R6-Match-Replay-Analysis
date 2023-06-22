@@ -89,7 +89,7 @@ Example of things that do not count as pivot kills/deaths:
 $Rating = $
 $(0.3110 * KillsPerRound + 0.6037 * PivotKillsPerRound + 0.5408 * UntradedKillsPerRound - 0.4894 * DeathsPerRound $
 $- 0.5966 * PivotDeathsPerRound - 0.6596 * UntradedDeathsPerRound + 0.1929 * ObjectiveRate + 0.3320 * KOST $
-$- 0.2464 * TradedKillRatio + 0.1564 * TradedDeathRatio) * (1.0698) + 1$
+$- 0.2464 * TradedKillRatio + 0.1564 * TradedDeathRatio) * 1.0698 + 1$
 
 ## Usage
 The simplest way to use this code for yourself is to edit R6MatchAnalysis.py as the comments on it suggest, then run it. It will output a .xlsx file to the Output folder.
