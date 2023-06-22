@@ -478,17 +478,31 @@ def compileStats(fileName, perMatch=False):
     # Used to calculate the player score
     scoreStats = ps.sqldf(
         "select " +
-        "Kills / Rounds as KPR, \"Pivot Kills\" / Rounds as PKPR, \"Untraded Kills\" / Rounds as UTKPR, Survival as SVR, " +
-        "\"Pivot Deaths\" / Rounds as PDPR, \"Untraded Deaths\" / Rounds as UTDPR, \"Objective Rate\" as OBJ, KOST, " +
+        "Kills * 1.0 / Rounds as KPR, \"Pivot Kills\" * 1.0 / Rounds as PKPR, " +
+        "\"Untraded Kills\" * 1.0 / Rounds as UTKPR, 1 - Survival as DPR, " +
+        "\"Pivot Deaths\" * 1.0 / Rounds as PDPR, \"Untraded Deaths\" * 1.0 / Rounds as UTDPR, " +
+        "\"Objective Rate\" as OBJ, KOST, " +
         "\"Traded Kill Ratio\" as TKR, \"Traded Death Ratio\" as TDR " +
         "from aggregated"
     )
 
     # This score stat has a mean of 1 and a variance of 1 (based on sampled data, coefficients may change with more data)
-    # It roughly indicates how well a player did (this is NOT the same as SiegeGG's rating system)
+    # It roughly indicates how well a player did (this is NOT the same as SiegeGG's rating system)\
+    coeff = [0.31098873, 0.60372474, 0.54077118, -0.48935013, -0.59661413, -0.65956768, 0.19292149, 0.33199835, -0.2463711, 0.15637783]
+    categories = ["KPR", "PKPR", "UTKPR", "DPR", "PDPR", "UTDPR", "OBJ", "KOST", "TKR", "TDR"]
+    variance = 0.5722806594518105
+    targetVariance = 0.5
+    equationString = "("
+    for i in range(len(categories)):
+        termString = ""
+        if i > 0:
+            termString = termString + (" + " if coeff[i] >= 0 else " - ")
+        termString = termString + str(abs(coeff[i])) + " * " + categories[i]
+        equationString = equationString + termString
+    equationString = equationString + ")"
+
     scores = ps.sqldf(
-        "select (0.7705 * KPR + 0.8783 * PKPR + 0.8117 * UTKPR + 0.8965 * SVR - 1.122 * PDPR - 1.1885 * UTDPR + " +
-        "0.9913 * OBJ + 0.7895 * KOST - 1.0606 * TKR + 0.9421 * TDR - 1) / (2.1624) + 1 as \"Player Rating\" " +
+        "select " + equationString + "/ " + str(variance ** 0.5) + " * " + str(targetVariance ** 0.5) + " + 1 as \"Player Rating\" " +
         "from scoreStats"
     )
 
@@ -502,7 +516,7 @@ def compileStats(fileName, perMatch=False):
         colNames = colNames[:1] + colNames[-1:] + colNames[1:-1]
     compiledStats = compiledStats[colNames]
 
-    outputPath = str(Path(__file__).parent.parent) + "\\Output\\" + fileName + ("_MATCH_" if perMatch else "") + "_Stats.xlsx"
+    outputPath = str(Path(__file__).parent.parent) + "\\Output\\" + fileName + ("_MATCH" if perMatch else "") + "_Stats.xlsx"
     writer = pd.ExcelWriter(outputPath)
 
     roundTable.to_excel(writer, sheet_name="Rounds", index=False)
