@@ -35,6 +35,7 @@ A few notable optimizations and bug fixes in this version:
     - Headshots
     - Pivot Kills (An advanced metric)
     - Untraded Kills (An advanced metric)
+    - Teamkills
     - If the player died
     - If the death was a pivot death (An advanced metric)
     - If the player got the opening kill
