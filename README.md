@@ -84,12 +84,12 @@ Example of things that do not count as pivot kills/deaths:
 - The survived the round
 - Their death was traded
 
-**Rating**: A summary score for a player to see how well they did at a glance. This is **NOT** the same as SiegeGG's rating (which can be [manually estimated](https://www.youtube.com/watch?v=faoQZK2875Q) from the existing stats. The score takes into account a few key stats and was calibrated (via gradient descent) to have a mean of 1 and variance of 1. This calibration was done on a sample of matches from a single collegiate LAN tournament (82 rounds played total). This formula may be tweaked in the future to be more insightful and/or fit a larger dataset.
+**Rating**: A summary score for a player to see how well they did at a glance. This is **NOT** the same as SiegeGG's rating (which can be [manually estimated](https://www.youtube.com/watch?v=faoQZK2875Q) from the existing stats), although it tries to be in a similar range. The score takes into account a few key stats and was calibrated (via gradient descent) to have a mean of 1 and variance of 0.5. This calibration was done on a sample of matches from a single collegiate LAN tournament (82 rounds played total). This formula may be tweaked in the future to be more insightful and/or fit a larger dataset.
 
 $Rating = $
-$(0.7705 * KillsPerRound + 0.8783 * PivotKillsPerRound + 0.8117 * UntradedKillsPerRound + 0.8965 * SurvivalRate $
-$- 1.122 * PivotDeathsPerRound - 1.1885 * UntradedDeathsPerRound + 0.9913 * ObjectiveRate + 0.7895 * KOST $
-$- 1.0606 * TradedKillRatio + 0.9421 * TradedDeathRatio - 1) / (2.1624) + 1$
+$(0.3110 * KillsPerRound + 0.6037 * PivotKillsPerRound + 0.5408 * UntradedKillsPerRound - 0.4894 * DeathsPerRound $
+$- 0.5966 * PivotDeathsPerRound - 0.6596 * UntradedDeathsPerRound + 0.1929 * ObjectiveRate + 0.3320 * KOST $
+$- 0.2464 * TradedKillRatio + 0.1564 * TradedDeathRatio) * (1.0698) + 1$
 
 ## Usage
 The simplest way to use this code for yourself is to edit R6MatchAnalysis.py as the comments on it suggest, then run it. It will output a .xlsx file to the Output folder.
