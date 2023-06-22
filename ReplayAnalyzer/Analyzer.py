@@ -20,6 +20,7 @@ class PlayerRoundInfo:
     headshots: int = 0
     pivotKills: int = 0
     untradedKills: int = 0
+    teamkills: int = 0
     died: bool = False
     pivotDeath: bool = False
     openingKill = False
@@ -219,6 +220,8 @@ def calculatePlayerRoundStats(processedEvents: List[MatchUpdate], header: RoundH
                 killsToBeTraded.append(e)
                 if e.headshot:
                     p.headshots += 1
+            else:
+                p.teamkills += 1
 
             p2.died = True
 
@@ -359,7 +362,7 @@ def processMultipleMatches(folderPath, saveName, playersToCareAbout: dict, parse
 def matchDataToTable(matchData: List[RoundHeader], playerNames: List[str], enemy=False, bothTeams=False):
 
     roundTable = pd.DataFrame(columns=["Match ID", "Round", "Map", "Site", "Attack/Defense", "Planted", "Disabled", "Win/Loss", "Win Condition"])
-    playerTable = pd.DataFrame(columns=["Name", "Match ID", "Round", "Operator", "Spawn", "Kills", "Headshots", "Pivot Kills", "Untraded Kills", "Died", "Pivot Death", "Opening Kill", "Opening Death", "Objective Play", "Traded"])
+    playerTable = pd.DataFrame(columns=["Name", "Match ID", "Round", "Operator", "Spawn", "Kills", "Headshots", "Pivot Kills", "Untraded Kills", "Teamkills", "Died", "Pivot Death", "Opening Kill", "Opening Death", "Objective Play", "Traded"])
 
     for roundData in matchData:
         matchID = roundData.matchID
@@ -416,7 +419,8 @@ def matchDataToTable(matchData: List[RoundHeader], playerNames: List[str], enemy
 
             if p in playersToCareAbout:
                 playerRow = [p.name, matchID, roundNum, p.operator, p.spawn, p.kills, p.headshots, p.pivotKills,
-                              p.untradedKills, p.died, p.pivotDeath, p.openingKill, p.openingDeath, p.objective, p.traded]
+                             p.untradedKills, p.teamkills, p.died, p.pivotDeath, p.openingKill, p.openingDeath,
+                             p.objective, p.traded]
                 playerTable.loc[len(playerTable)] = playerRow
 
         roundRow = [matchID, roundNum, roundData.map, roundData.site, teamToCareAbout, planted, disabled, winLoss, winCondition]
@@ -453,6 +457,7 @@ def compileStats(fileName, perMatch=False):
             "sum(\"Pivot Kills\") as \"Pivot Kills\", sum(\"Pivot Death\") as \"Pivot Deaths\", " +
             "sum(\"Opening Kill\") as \"Opening Kills\", sum(\"Opening Death\") as \"Opening Deaths\", " +
             "sum(\"Untraded Kills\") as \"Untraded Kills\", sum(Died) - sum(Traded) as \"Untraded Deaths\", " +
+            "sum(Teamkills) as Teamkills, " +
             "sum(\"Objective Play\") * 1.0 / count(*) as \"Objective Rate\", " +
             "sum(case when Kills > 0 or \"Objective Play\" or not Died or Traded then 1 else 0 end) * 1.0 / count(*) as KOST, " +
             "(count(*) - sum(Died)) * 1.0/count(*) as Survival "
