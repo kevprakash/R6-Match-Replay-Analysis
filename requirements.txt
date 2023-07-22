@@ -2,3 +2,4 @@ numpy>=1.24.3
 pandas>=2.0.2
 pandasql>=0.7.3
 zstandard>=0.21.0
+openpyxl>=3.1.2
