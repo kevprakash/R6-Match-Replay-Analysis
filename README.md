@@ -1,4 +1,6 @@
-# R6-Match-Replay-Analysis
+# R6-Match-Replay-Analysis (NOT UPDATED)
+
+This repository is no longer being updated, please use [this analysis tool](https://github.com/kevprakash/R6-dissect-Analysis-Addon) which is an addon to [redraskal's parser](https://github.com/redraskal/r6-dissect)
 
 A parsing/analysis tool for use with Rainbow 6: Siege replay (.rec) files.
 
